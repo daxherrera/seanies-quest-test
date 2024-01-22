@@ -3,8 +3,6 @@ const { resolve } = require('path');
 const { neon } = require( '@neondatabase/serverless');
 
 const sql = neon("postgresql://daxherrera:sXlrhNBWk1P3@ep-throbbing-bread-a5hiytdn.us-east-2.aws.neon.tech/neondb?sslmode=require");
-// `post` is now [{ id: 12, title: 'My post', ... }] (or undefined)
-
 
 const app = express();
 const port = 3010;
