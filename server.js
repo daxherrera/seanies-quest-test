@@ -36,7 +36,7 @@ async function write() {
   ];
 
   await NFT.bulkCreate(
-    nfts.map(([firstName, lastName]) => ({ firstName, lastName }))
+    nfts.map(([contract, tokenID, name, fights]) => ({ contract, tokenID, name, fights }))
   );
 
   console.log('All data written 🎉');

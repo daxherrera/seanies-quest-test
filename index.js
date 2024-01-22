@@ -22,14 +22,11 @@ sequelize
   });
 
 
-
-const User = sequelize.define('users', {
-  firstName: {
-    type: Sequelize.STRING,
-  },
-  lastName: {
-    type: Sequelize.STRING,
-  },
+const NFT = sequelize.define('nfts', {
+  contract: { type: Sequelize.STRING, },
+  tokenID: { type: Sequelize.STRING, },
+  name: { type: Sequelize.STRING, },
+  fights: { type: Sequelize.INTEGER, },
 });
 
 
@@ -38,19 +35,23 @@ const port = 3010;
 
 app.use(express.static('static'));
 
-app.get('/metadata/:nftId', async (req, res) => {
-  const nftId = req.params.nftId;
+app.get('/metadata/:tokenID', async (req, res) => {
+  const tokenID = req.params.tokenID;
 
-  try {
-    await User.sync();
-    const users = await User.findAll();
-    console.log(users.length);
-  } catch (error) {
-    console.log(error);
-  }
+  const nft = await NFT.findOne({
+    where: { tokenID: tokenID, },
+  });
+  
+  if(nft.length == 0)
+    res.send(`None found. Go buy one.`);
+  else
+    res.json(nft.toJSON());
+});
 
+app.get('/fight/:tokenID', async (req, res) => {
+  const tokenID = req.params.tokenID;
 
-  res.send(`NFT ID: ${nftId}`);
+  res.send(`NFT ID: ${tokenID}`);
 });
 
 app.get('/', (req, res) => {
@@ -59,4 +60,4 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
-});
+})
