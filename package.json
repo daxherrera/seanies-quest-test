@@ -1,5 +1,5 @@
 {
-  "name": "SeaniesQuest",
+  "name": "seanies-quest",
   "private": true,
   "scripts": {
     "start": "node index.js",
