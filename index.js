@@ -15,6 +15,7 @@ app.use(express.static('static'));
 app.get('/metadata/:tokenID', async (req, res) => {
   //id, name, description, image
   let tokenID = req.params.tokenID;
+  tokenID = 1;
   const [post] = await sql('SELECT * FROM seanies WHERE id =$1', [tokenID]);
  
   let nft = { name: post.name, description: post.desc, image: post.image};
