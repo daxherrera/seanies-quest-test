@@ -25,7 +25,7 @@ const User = sequelize.define('users', {
   },
 });
 
-async function myfunction() {
+async function writetest() {
   console.log('Inside of myfunction');
   await User.sync({ force: true });
 
@@ -34,6 +34,7 @@ async function myfunction() {
     ['John', 'Hancock'],
     ['Liz', 'Smith'],
     ['Ahmed', 'Khan'],
+    ['dom', 'delouise'],
   ];
 
   await User.bulkCreate(
@@ -43,7 +44,7 @@ async function myfunction() {
   console.log('All data written 🎉');
 }
 
-async function myfunction2() {
+async function readtest() {
   await User.sync();
 
   const users = await User.findAll();
@@ -56,23 +57,16 @@ async function myfunction2() {
     console.log('No users found 😔');
   }
 }
-function writetest() {
-  return myfunction();
-}
-function readtest() {
-  return myfunction2();
-}
 
-// Call start
-(async () => {
+/*
+(async() => {
   console.log('before start');
 
   await writetest();
   await readtest();
-
+  
   console.log('after start');
 })();
+*/
 
-async () => {};
-
-module.exports = { writetest };
+module.exports = { readtest };

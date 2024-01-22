@@ -1,6 +1,6 @@
 const express = require('express');
 const { resolve } = require('path');
-const writetest = require('./server.js');
+//const writetest = require('./server.js');
 
 const app = express();
 const port = 3010;
