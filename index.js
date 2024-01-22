@@ -37,6 +37,7 @@ app.get('/metadata/:tokenID', async (req, res) => {
 app.get('/list', async (req, res) => {
   const {rows} = await sql('SELECT * FROM seanies');
   console.log(rows);
+  console.log(rows);
   res.send(`done`);
 });
  
