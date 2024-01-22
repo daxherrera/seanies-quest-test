@@ -16,57 +16,50 @@ sequelize
     console.error('Unable to connect to the database: ', error);
   });
 
-const User = sequelize.define('users', {
-  firstName: {
-    type: Sequelize.STRING,
-  },
-  lastName: {
-    type: Sequelize.STRING,
-  },
+const NFT = sequelize.define('nfts', {
+  contract: { type: Sequelize.STRING, },
+  tokenID: { type: Sequelize.STRING, },
+  name: { type: Sequelize.STRING, },
+  fights: { type: Sequelize.INTEGER, },
 });
 
-async function writetest() {
-  console.log('Inside of myfunction');
-  await User.sync({ force: true });
+async function write() {
+  await NFT.sync({ force: true });
 
   // users we want to create
-  const users = [
-    ['John', 'Hancock'],
-    ['Liz', 'Smith'],
-    ['Ahmed', 'Khan'],
-    ['dom', 'delouise'],
+  const nfts = [
+    ['contract123231234', '1', 'Tommy', 0],
+    ['contract123231234', '2', 'Dingus', 0],
+    ['contract123231234', '3', 'Ralph', 0],
+    ['contract123231234', '4', 'Lobo', 0],
+    ['contract123231234', '5', 'ingle', 2],
   ];
 
-  await User.bulkCreate(
-    users.map(([firstName, lastName]) => ({ firstName, lastName }))
+  await NFT.bulkCreate(
+    nfts.map(([firstName, lastName]) => ({ firstName, lastName }))
   );
 
   console.log('All data written 🎉');
 }
 
-async function readtest() {
-  await User.sync();
+async function read() {
+  await NFT.sync();
 
-  const users = await User.findAll();
+  const nfts = await NFT.findAll();
 
-  for (const user of users) {
-    console.log(`${user.firstName} ${user.lastName}`);
+  for (const nft of nfts) {
+    console.log(nft);
   }
 
-  if (users.length === 0) {
-    console.log('No users found 😔');
+  if (nfts.length === 0) {
+    console.log('No nfts found 😔');
   }
 }
 
-/*
 (async() => {
   console.log('before start');
 
-  await writetest();
-  await readtest();
+  await read();
   
   console.log('after start');
 })();
-*/
-
-module.exports = { readtest };
