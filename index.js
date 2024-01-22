@@ -25,7 +25,7 @@ app.get('/metadata/:tokenID', async (req, res) => {
 
   let attributes = [];
   attributes.push({trait_type: "fights", value: post.fights});
-
+ 
   props.forEach(attr => {
     attributes.push({trait_type: attr.name, value: attr.value});
   });
