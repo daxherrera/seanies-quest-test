@@ -1,60 +1,53 @@
 const express = require('express');
 const { resolve } = require('path');
-const Sequelize = require('sequelize');
+const { neon } = require( '@neondatabase/serverless');
 
-//get the metadata
-//fight
-
-// setup a new database
-const sequelize = new Sequelize('database', '', '', {
-  dialect: 'sqlite',
-  storage: 'data/database.sqlite',
-  logging: false,
-});
-
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log('Connection has been established successfully.');
-  })
-  .catch((error) => {
-    console.error('Unable to connect to the database: ', error);
-  });
-
-
-const NFT = sequelize.define('nfts', {
-  contract: { type: Sequelize.STRING, },
-  tokenID: { type: Sequelize.STRING, },
-  name: { type: Sequelize.STRING, },
-  fights: { type: Sequelize.INTEGER, },
-});
+const sql = neon("postgresql://daxherrera:sXlrhNBWk1P3@ep-throbbing-bread-a5hiytdn.us-east-2.aws.neon.tech/neondb?sslmode=require");
+// `post` is now [{ id: 12, title: 'My post', ... }] (or undefined)
 
 
 const app = express();
 const port = 3010;
 
+
 app.use(express.static('static'));
 
 app.get('/metadata/:tokenID', async (req, res) => {
-  const tokenID = req.params.tokenID;
+  //id, name, description, image
+  let tokenID = req.params.tokenID;
+  const [post] = await sql('SELECT * FROM seanies WHERE id =$1', [tokenID]);
 
-  const nft = await NFT.findOne({
-    where: { tokenID: tokenID, },
+  let nft = { name: post.name, description: "desc here", image: "url"};
+
+  //get all the properties and loop them
+  const props = await sql('SELECT name, value FROM attributes WHERE seanies_id = $1', [post.id]);
+  console.log(props);
+
+  let attributes = [];
+  attributes.push({trait_type: "fights", value: post.fights});
+
+  props.forEach(attr => {
+    attributes.push({trait_type: attr.name, value: attr.value});
   });
-  
-  if(nft.length == 0)
-    res.send(`None found. Go buy one.`);
-  else
-    res.json(nft.toJSON());
-});
+  nft.attributes = attributes;
 
+  res.json(nft);
+}); 
+
+app.get('/list', async (req, res) => {
+  const {rows} = await sql('SELECT * FROM seanies');
+  console.log(rows);
+  res.send(`done`);
+});
+ 
 app.get('/fight/:tokenID', async (req, res) => {
   const tokenID = req.params.tokenID;
-
-  res.send(`NFT ID: ${tokenID}`);
+  const [ret] = await sql('UPDATE seanies SET fights = fights + 1 WHERE id =$1 RETURNING fights', [tokenID]);
+  console.log(ret.fights)
+  res.send(`NFT ID: ${tokenID} has fought: ${ret.fights} times.`);
 });
 
-app.get('/', (req, res) => {
+app.get('/', (req, res) => {  
   res.sendFile(resolve(__dirname, 'pages/index.html'));
 });
 
