@@ -17,8 +17,10 @@ app.get('/metadata/:tokenID', async (req, res) => {
   let tokenID = req.params.tokenID; 
   tokenID = 1;
   const [post] = await sql('SELECT * FROM seanies WHERE id =$1', [tokenID]);
+
+  let name = req.params.tokenID + " " + post.name
  
-  let nft = { name: post.name, description: post.desc, image: post.image};
+  let nft = { name: name, description: post.desc, image: post.image};
 
   //get all the properties and loop them
   const props = await sql('SELECT name, value FROM attributes WHERE seanies_id = $1', [post.id]);
