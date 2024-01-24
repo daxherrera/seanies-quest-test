@@ -6,24 +6,74 @@ const { resolve } = require('path');
 const { neon } = require( '@neondatabase/serverless');
 
 require('dotenv').config();
-
 const sql = neon(process.env.NEON_URL);
 
 const app = express();
-const port = 3010; 
+const port = 3010;  
   
 const { authRouter, authMiddleware, getUser } = ThirdwebAuth({
   domain: process.env.THIRDWEB_AUTH_DOMAIN || "",
-  wallet: new PrivateKeyWallet(process.env.PRIVATE_KEY || ""),
-});
+  wallet: new PrivateKeyWallet(process.env.THIRDWEB_AUTH_PRIVATE_KEY || ""),
+  // NOTE: All these callbacks are optional! You can delete this section and
+  // the Auth flow will still work.
+  callbacks: {
+    onLogin: async (address) => {
+      // Here we can run side-effects like creating and updating user data
+      // whenever a user logs in.
+      if (!users[address]) { 
+        users[address] = {
+          created_at: Date.now(),
+          last_login_at: Date.now(),
+          num_log_outs: 0,
+        };
+      } else {
+        users[address].last_login_at = Date.now();
+      }
 
-// Add the auth router to our app to set up the /auth/* endpoints
-app.use("/auth", authRouter);
+      // We can also provide any session data to store in the user's session.
+      return { role: ["admin"] };
+    },
+    onUser: async (user) => {
+      // Here we can run side-effects whenever a user is fetched from the client side
+      if (users[user.address]) {
+        users[user.address].user_last_accessed = Date.now();
+      }
+
+      // And we can provide any extra user data to be sent to the client
+      // along with the default user object.
+      return users[user.address];
+    },
+    onLogout: async (user) => {
+      // Finally, we can run any side-effects whenever a user logs out.
+      if (users[user.address]) {
+        users[user.address].num_log_outs++;
+      }
+    },
+  },
+});
 
 // Add the auth middleware to the rest of our app to allow user authentication on other endpoints
 app.use(authMiddleware);
 
-app.use(express.static('static'));
+// Add the auth router to our app to set up the /auth/* endpoints
+app.use("/auth", authRouter);
+
+
+//app.use(express.static('static'));
+
+app.get("/secret", async (req, res) => {
+  const user = await getUser(req);
+
+  if (!user) {
+    return res.status(401).json({
+      message: "Not authorized.",
+    });
+  }
+
+  return res.status(200).json({
+    message: "This is a secret... don't tell anyone.",
+  });
+});
 
 app.get('/metadata/:tokenID', async (req, res) => {
   //id, name, description, image
