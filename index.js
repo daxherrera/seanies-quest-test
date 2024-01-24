@@ -1,14 +1,27 @@
+const { ThirdwebAuth } = require( "@thirdweb-dev/auth/express");
+const { PrivateKeyWallet } = require("@thirdweb-dev/auth/evm");
+
 const express = require('express');
 const { resolve } = require('path');
 const { neon } = require( '@neondatabase/serverless');
 
-const sql = neon("postgresql://daxherrera:sXlrhNBWk1P3@ep-throbbing-bread-a5hiytdn.us-east-2.aws.neon.tech/neondb?sslmode=require");
-// `post` is now [{ id: 12, title: 'My post', ... }] (or undefined)
+require('dotenv').config();
 
+const sql = neon(process.env.NEON_URL);
 
-const app = express(); 
-const port = 3010;
+const app = express();
+const port = 3010; 
+  
+const { authRouter, authMiddleware, getUser } = ThirdwebAuth({
+  domain: process.env.THIRDWEB_AUTH_DOMAIN || "",
+  wallet: new PrivateKeyWallet(process.env.PRIVATE_KEY || ""),
+});
 
+// Add the auth router to our app to set up the /auth/* endpoints
+app.use("/auth", authRouter);
+
+// Add the auth middleware to the rest of our app to allow user authentication on other endpoints
+app.use(authMiddleware);
 
 app.use(express.static('static'));
 

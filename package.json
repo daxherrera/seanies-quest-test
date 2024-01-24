@@ -7,12 +7,16 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.7.2",
+    "@thirdweb-dev/auth": "^4.1.25",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.3.2",
+    "ethers": "^5.7.2",
     "express": "^4.18.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"
   },
   "stackblitz": {
-    "startCommand": "npm run app" 
+    "startCommand": "npm run app"
   }
 }
