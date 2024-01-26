@@ -1,8 +1,6 @@
 const express = require('express');
 const { ethers } = require('ethers');
 const { resolve } = require('path');
-const bodyParser = require('body-parser');
-
 
 const { neon } = require( '@neondatabase/serverless');
 
@@ -10,30 +8,35 @@ require('dotenv').config();
 const sql = neon(process.env.NEON_URL); 
 
 const app = express(); 
-const port = 3010;  
+const port = 3010;
+app.use(express.json());
 
 app.post('/api/authorize', (req, res) => {
-    const { address, signature } = req.body;
-    const message = "Authorize this request";
-    console.log(req.body)
-    console.log(address)
-    console.log(signature)
+  const { address, signature } = req.body;
+  const message = "Authorize this request";
 
     try {
         // Recover the address from the signature
+        console.log(signature);
+        console.log(message);
         const recoveredAddress = ethers.utils.verifyMessage(message, signature);
-        console.log(recoveredAddress);
+        console.log("recover");
+        console.log(recoveredAddress.toLowerCase());
         // Check if the recovered address matches the provided address
-        if (recoveredAddress.toLowerCase() === address.toLowerCase()) {
-            res.send({ success: true, message: 'Authorized' });
+        if (recoveredAddress.toLowerCase().trim() === address.toLowerCase().trim() ) {
+            console.log("true");
+            //res.send({ success: true, message: 'Authorized' });
         } else {
-            res.send({ success: false, message: 'Unauthorized' });
+          console.log("false");
+          res.send({ success: false, message: 'Unauthorized' });
         }
     } catch (err) {
+      console.error("Error during message verification:", err);
+
         //res.status(500).send({ success: false, message: 'Error verifying signature' });
     }
 });
-
+ 
 app.get('/metadata/:tokenID', async (req, res) => {
   //id, name, description, image
   let tokenID = req.params.tokenID; 

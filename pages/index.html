@@ -13,20 +13,29 @@
 <script>
     $(document).ready(function() {
         $('#connectButton').click(async function() {
-        const { provider, signer } = await connectMetaMask();
-        $('#sendRequestButton').show();
+            const { provider, signer } = await connectMetaMask();
+            $('#sendRequestButton').show();
 
-        $('#sendRequestButton').click(async function() {
-            const message = "Authorize this request";
-            const address = await signer.getAddress();
-            const signature = await signer.signMessage(message);
+            $('#sendRequestButton').click(async function() {
+                const message = "Authorize this request";
+                const address = await signer.getAddress();
+                const signature = await signer.signMessage(message);
 
-            // Send the address and signature to the server
-            $.post('/api/authorize', { address, signature }, function(response) {
-                console.log(response);
+                // Send the address and signature to the server
+                $.ajax({
+                    url: '/api/authorize', 
+                    type: 'POST', 
+                    contentType: 'application/json', 
+                    data: JSON.stringify({ address, signature }),
+                    success: function(response) {
+                        console.log('Response:', response);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                    }
+                });
             });
         });
-    });
     });
 
     async function connectMetaMask() {
