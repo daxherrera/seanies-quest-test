@@ -1,7 +1,5 @@
-const { ThirdwebAuth } = require( "@thirdweb-dev/auth/express");
-const { PrivateKeyWallet } = require("@thirdweb-dev/auth/evm");
-
 const express = require('express');
+const Web3 = require('web3');
 const { resolve } = require('path');
 const { neon } = require( '@neondatabase/serverless');
 
@@ -10,70 +8,48 @@ const sql = neon(process.env.NEON_URL);
 
 const app = express();
 const port = 3010;  
-  
-const { authRouter, authMiddleware, getUser } = ThirdwebAuth({
-  domain: process.env.THIRDWEB_AUTH_DOMAIN || "",
-  wallet: new PrivateKeyWallet(process.env.THIRDWEB_AUTH_PRIVATE_KEY || ""),
-  // NOTE: All these callbacks are optional! You can delete this section and
-  // the Auth flow will still work.
-  callbacks: {
-    onLogin: async (address) => {
-      // Here we can run side-effects like creating and updating user data
-      // whenever a user logs in.
-      if (!users[address]) { 
-        users[address] = {
-          created_at: Date.now(),
-          last_login_at: Date.now(),
-          num_log_outs: 0,
-        };
-      } else {
-        users[address].last_login_at = Date.now();
-      }
-
-      // We can also provide any session data to store in the user's session.
-      return { role: ["admin"] };
-    },
-    onUser: async (user) => {
-      // Here we can run side-effects whenever a user is fetched from the client side
-      if (users[user.address]) {
-        users[user.address].user_last_accessed = Date.now();
-      }
-
-      // And we can provide any extra user data to be sent to the client
-      // along with the default user object.
-      return users[user.address];
-    },
-    onLogout: async (user) => {
-      // Finally, we can run any side-effects whenever a user logs out.
-      if (users[user.address]) {
-        users[user.address].num_log_outs++;
-      }
-    },
-  },
-});
-
-// Add the auth middleware to the rest of our app to allow user authentication on other endpoints
-app.use(authMiddleware);
-
-// Add the auth router to our app to set up the /auth/* endpoints
-app.use("/auth", authRouter);
-
 
 //app.use(express.static('static'));
+// In-memory storage for nonces
+const nonces = {};
 
-app.get("/secret", async (req, res) => {
-  const user = await getUser(req);
+// Endpoint to request a nonce for a specific address
+app.get('/requestNonce/:address', (req, res) => {
+  const { address } = req.params;
+  const nonce = `Your nonce: ${Math.random()}`; // Generate a random nonce
 
-  if (!user) {
-    return res.status(401).json({
-      message: "Not authorized.",
-    });
+  nonces[address] = nonce; // Store the nonce for later verification
+
+  res.json({ nonce });
+});
+
+// Endpoint to verify the signed nonce
+app.post('/verifySignature', (req, res) => {
+  const { address, signature } = req.body;
+  const nonce = nonces[address];
+
+  if (!nonce) {
+      return res.status(400).json({ message: "Nonce not found" });
   }
 
-  return res.status(200).json({
-    message: "This is a secret... don't tell anyone.",
-  });
+  try {
+      const recoveredAddress = web3.eth.accounts.recover(nonce, signature);
+
+      if (recoveredAddress.toLowerCase() === address.toLowerCase()) {
+          // The signature is valid
+          res.json({ success: true, message: "Authentication successful" });
+      } else {
+          // The signature is invalid
+          res.status(401).json({ success: false, message: "Invalid signature" });
+      }
+  } catch (error) {
+      res.status(500).json({ success: false, message: "Error verifying signature" });
+  }
 });
+
+
+
+
 
 app.get('/metadata/:tokenID', async (req, res) => {
   //id, name, description, image

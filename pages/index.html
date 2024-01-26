@@ -1,16 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Hello Express!</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="stylesheet" href="./style.css" />
-  </head>
-  <body>
-    <h1>Hello Express!</h1>
-    <p>Showing <code>pages/index.html</code></p>
-    <script>
+<html>
+<head>
+    <title>MetaMask Login</title>
+</head>
+<body>
+    <button id="loginButton">Login with MetaMask</button>
 
+    <script>
+        document.getElementById('loginButton').addEventListener('click', () => {
+            if (window.ethereum) {
+                window.ethereum.request({ method: 'eth_requestAccounts' })
+                .then(accounts => {
+                    // Handle the returned accounts
+                    console.log(accounts);
+                })
+                .catch(err => {
+                    console.error(err);
+                });
+            } else {
+                console.log('MetaMask is not installed!');
+            }
+        });
     </script>
-  </body>
+</body>
 </html>
