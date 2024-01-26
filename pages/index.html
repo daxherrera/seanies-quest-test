@@ -1,26 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MetaMask Login</title>
+    <title>Connect to MetaMask</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
 </head>
 <body>
-    <button id="loginButton">Login with MetaMask</button>
+<!-- HTML -->
+<button id="connectButton">Connect to MetaMask</button>
+<button id="sendRequestButton" style="display:none;">Send Authorized Request</button>
 
-    <script>
-        document.getElementById('loginButton').addEventListener('click', () => {
-            if (window.ethereum) {
-                window.ethereum.request({ method: 'eth_requestAccounts' })
-                .then(accounts => {
-                    // Handle the returned accounts
-                    console.log(accounts);
-                })
-                .catch(err => {
-                    console.error(err);
-                });
-            } else {
-                console.log('MetaMask is not installed!');
-            }
+<script>
+    $(document).ready(function() {
+        $('#connectButton').click(async function() {
+        const { provider, signer } = await connectMetaMask();
+        $('#sendRequestButton').show();
+
+        $('#sendRequestButton').click(async function() {
+            const message = "Authorize this request";
+            const address = await signer.getAddress();
+            const signature = await signer.signMessage(message);
+
+            // Send the address and signature to the server
+            $.post('/api/authorize', { address, signature }, function(response) {
+                console.log(response);
+            });
         });
-    </script>
+    });
+    });
+
+    async function connectMetaMask() {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                console.log('Connected to MetaMask');
+                return { provider, signer };
+            } catch (error) {
+                console.error('User denied account access');
+            }
+        } else {
+            console.log('MetaMask is not installed.');
+        }
+    }
+</script>
 </body>
 </html>

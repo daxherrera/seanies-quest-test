@@ -1,55 +1,38 @@
 const express = require('express');
-const Web3 = require('web3');
+const { ethers } = require('ethers');
 const { resolve } = require('path');
+const bodyParser = require('body-parser');
+
+
 const { neon } = require( '@neondatabase/serverless');
 
 require('dotenv').config();
-const sql = neon(process.env.NEON_URL);
+const sql = neon(process.env.NEON_URL); 
 
-const app = express();
+const app = express(); 
 const port = 3010;  
 
-//app.use(express.static('static'));
-// In-memory storage for nonces
-const nonces = {};
+app.post('/api/authorize', (req, res) => {
+    const { address, signature } = req.body;
+    const message = "Authorize this request";
+    console.log(req.body)
+    console.log(address)
+    console.log(signature)
 
-// Endpoint to request a nonce for a specific address
-app.get('/requestNonce/:address', (req, res) => {
-  const { address } = req.params;
-  const nonce = `Your nonce: ${Math.random()}`; // Generate a random nonce
-
-  nonces[address] = nonce; // Store the nonce for later verification
-
-  res.json({ nonce });
+    try {
+        // Recover the address from the signature
+        const recoveredAddress = ethers.utils.verifyMessage(message, signature);
+        console.log(recoveredAddress);
+        // Check if the recovered address matches the provided address
+        if (recoveredAddress.toLowerCase() === address.toLowerCase()) {
+            res.send({ success: true, message: 'Authorized' });
+        } else {
+            res.send({ success: false, message: 'Unauthorized' });
+        }
+    } catch (err) {
+        //res.status(500).send({ success: false, message: 'Error verifying signature' });
+    }
 });
-
-// Endpoint to verify the signed nonce
-app.post('/verifySignature', (req, res) => {
-  const { address, signature } = req.body;
-  const nonce = nonces[address];
-
-  if (!nonce) {
-      return res.status(400).json({ message: "Nonce not found" });
-  }
-
-  try {
-      const recoveredAddress = web3.eth.accounts.recover(nonce, signature);
-
-      if (recoveredAddress.toLowerCase() === address.toLowerCase()) {
-          // The signature is valid
-          res.json({ success: true, message: "Authentication successful" });
-      } else {
-          // The signature is invalid
-          res.status(401).json({ success: false, message: "Invalid signature" });
-      }
-  } catch (error) {
-      res.status(500).json({ success: false, message: "Error verifying signature" });
-  }
-});
-
-
-
-
 
 app.get('/metadata/:tokenID', async (req, res) => {
   //id, name, description, image
