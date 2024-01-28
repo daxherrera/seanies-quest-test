@@ -1,58 +1,93 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Connect to MetaMask</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.5.umd.min.js" type="application/javascript"></script>
 </head>
+
 <body>
-<!-- HTML -->
-<button id="connectButton">Connect to MetaMask</button>
-<button id="sendRequestButton" style="display:none;">Send Authorized Request</button>
+    <!-- HTML -->
+    <button id="connectButton">Connect to MetaMask</button>
+    <button id="sendRequestButton" style="display:none;">Send Authorized Request</button>
+    <button id="sendFight" style="display:none;">Send Fight Request</button>
+    
+    <script>
+        $(document).ready(function () {
+            $('#connectButton').click(async function () {
+                const { provider, signer } = await connectMetaMask();
+                $('#sendRequestButton').show();
+                $('#sendFight').show();
 
-<script>
-    $(document).ready(function() {
-        $('#connectButton').click(async function() {
-            const { provider, signer } = await connectMetaMask();
-            $('#sendRequestButton').show();
+                $('#sendFight').click(async function () {
+                    let authToken = localStorage.getItem('jwt');
+                    console.log(authToken);
+                    $.ajax({
+                        url: '/fight', 
+                        headers: { 'token': authToken },
+                        success: function (response) {
+                            console.log('Fight Response:', response);
+                        },
+                    });
+                });
 
-            $('#sendRequestButton').click(async function() {
-                const message = "Authorize this request";
-                const address = await signer.getAddress();
-                const signature = await signer.signMessage(message);
+                $('#sendRequestButton').click(async function () {
+                    const address = await signer.getAddress();
+                    const message = "Authorize me, please!"
+                    const signature = await signer.signMessage(message);
 
-                // Send the address and signature to the server
-                $.ajax({
-                    url: '/api/authorize', 
-                    type: 'POST', 
-                    contentType: 'application/json', 
-                    data: JSON.stringify({ address, signature }),
-                    success: function(response) {
-                        console.log('Response:', response);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error:', error);
-                    }
+                    // Send the address and signature to the server
+                    $.ajax({
+                        url: '/api/authorize',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ address, signature, message }),
+                        success: function (response) {
+                            console.log('Response:', response);
+                            // Store the JWT token in localStorage
+                            localStorage.setItem('jwt', response.authToken);
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error:', error);
+                        }
+                    });
                 });
             });
         });
-    });
 
-    async function connectMetaMask() {
-        if (typeof window.ethereum !== 'undefined') {
-            try {
-                await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const signer = provider.getSigner();
-                console.log('Connected to MetaMask');
-                return { provider, signer };
-            } catch (error) {
-                console.error('User denied account access');
+        async function connectMetaMask() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const signer = provider.getSigner();
+                    console.log('Connected to MetaMask');
+                    const address = await signer.getAddress();
+                    console.log(address);
+                    const url = `https://polygon-mainnet.g.alchemy.com/nft/v3/VI96s2g66gYU12zb7m1LT8lOnWVivIN8/getNFTsForOwner?owner=${address}&contractAddresses[]=0x1989d797b34a77def5d5b03b46347831615b5e85&withMetadata=true&pageSize=100`
+                    console.log(url);
+                    $.get( url, function( data ) {
+                        console.log(data.ownedNfts);
+                        console.log(data.ownedNfts.length);
+                        if(!data.ownedNfts) console.log("You got no seanies");
+                        else{
+                            data.ownedNfts.forEach((nft) => { 
+                                console.log(nft);
+                                 $("#results").append(`${nft.name} ${nft.tokenId}<br/>`);
+                            });
+                        }
+                    });
+                    return { provider, signer };
+                } catch (error) {
+                    console.error('User denied account access');
+                }
+            } else {
+                console.log('MetaMask is not installed.');
             }
-        } else {
-            console.log('MetaMask is not installed.');
         }
-    }
-</script>
+    </script>
+    <div id="results"></div>
 </body>
+
 </html>
